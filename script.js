@@ -1,6 +1,7 @@
 let score = 0;
 let combo = 0;
 let gameStarted = false;
+let gamePaused = false;
 let notes = [];
 let spawnInterval;
 
@@ -10,6 +11,11 @@ const chordDisplay = document.getElementById('chordDisplay');
 const lanes = document.querySelectorAll('.lane');
 const startBtn = document.getElementById('startBtn');
 const startOverlay = document.getElementById('startOverlay');
+const pauseOverlay = document.getElementById('pauseOverlay');
+const pauseBtn = document.getElementById('pauseBtn');
+const resumeBtn = document.getElementById('resumeBtn');
+const restartBtn = document.getElementById('restartBtn');
+const restartFromPauseBtn = document.getElementById('restartFromPauseBtn');
 const hitFeedback = document.getElementById('hitFeedback');
 
 const audioFile = document.getElementById('audioFile');
@@ -19,7 +25,6 @@ const bgm = document.getElementById('bgm');
 
 let audioCtx = null;
 
-// 常見和弦庫 (當 Combo 達到一定條件時解鎖伴奏)
 const chords = [
     { name: "C Major (C - E - G)", freqs: [261.63, 329.63, 392.00] },
     { name: "Am Minor (A - C - E)", freqs: [220.00, 261.63, 329.63] },
@@ -36,7 +41,6 @@ audioFile.addEventListener('change', (e) => {
     }
 });
 
-// 播放和弦音效（支援多頻率疊加，呈現真實和弦感）
 function playChordSound(freqs) {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -46,7 +50,7 @@ function playChordSound(freqs) {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         
-        osc.type = 'triangle'; // 柔和少許的合成器音色
+        osc.type = 'triangle';
         osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
         
         gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
@@ -64,7 +68,7 @@ function showFeedback(text, type) {
     hitFeedback.textContent = text;
     hitFeedback.className = `hit-feedback ${type}`;
     hitFeedback.style.opacity = '1';
-    hitFeedback.style.transform = 'translate(-50%, -60%)';
+    hitFeedback.style.transform = 'translate(-50%, -60px)';
     
     setTimeout(() => {
         hitFeedback.style.opacity = '0';
@@ -72,7 +76,6 @@ function showFeedback(text, type) {
     }, 300);
 }
 
-// 更新動態和弦顯示
 function updateChordState() {
     if (combo >= 15) {
         let chordIndex = Math.floor(combo / 5) % chords.length;
@@ -84,14 +87,21 @@ function updateChordState() {
     }
 }
 
-startBtn.addEventListener('click', () => {
+// 開始遊戲
+function startGame() {
     startOverlay.style.display = 'none';
+    pauseOverlay.style.display = 'none';
     gameStarted = true;
+    gamePaused = false;
     score = 0;
     combo = 0;
     scoreDisplay.textContent = score;
     comboDisplay.textContent = combo;
     chordDisplay.textContent = `準備進入節奏...`;
+
+    // 清除舊音符
+    notes.forEach(n => n.element.remove());
+    notes = [];
 
     if (bgm.src) {
         bgm.currentTime = 0;
@@ -103,7 +113,51 @@ startBtn.addEventListener('click', () => {
     
     if (spawnInterval) clearInterval(spawnInterval);
     spawnInterval = setInterval(spawnNote, intervalMs);
-});
+}
+
+// 暫停遊戲
+function togglePause() {
+    if (!gameStarted) return;
+    
+    gamePaused = !gamePaused;
+    if (gamePaused) {
+        pauseOverlay.style.display = 'flex';
+        if (bgm.src) bgm.pause();
+        clearInterval(spawnInterval);
+    } else {
+        pauseOverlay.style.display = 'none';
+        if (bgm.src) bgm.play();
+        const bpm = parseInt(bpmInput.value) || 120;
+        const intervalMs = (60 / bpm) * 1000;
+        spawnInterval = setInterval(spawnNote, intervalMs);
+    }
+}
+
+// 重新開始
+function restartGame() {
+    if (spawnInterval) clearInterval(spawnInterval);
+    if (bgm.src) {
+        bgm.pause();
+        bgm.currentTime = 0;
+    }
+    notes.forEach(n => n.element.remove());
+    notes = [];
+    gameStarted = false;
+    gamePaused = false;
+    pauseOverlay.style.display = 'none';
+    startOverlay.style.display = 'flex';
+    score = 0;
+    combo = 0;
+    scoreDisplay.textContent = score;
+    comboDisplay.textContent = combo;
+    chordDisplay.textContent = `準備就緒`;
+}
+
+startBtn.addEventListener('click', startGame);
+resumeBtn.addEventListener('click', togglePause);
+pauseBtn.addEventListener('click', togglePause);
+restartBtn.addEventListener('click', restartGame);
+restartFromPauseBtn.addEventListener('click', restartGame);
 
 bgm.addEventListener('ended', () => {
     gameStarted = false;
@@ -113,7 +167,7 @@ bgm.addEventListener('ended', () => {
 });
 
 function spawnNote() {
-    if (!gameStarted) return;
+    if (!gameStarted || gamePaused) return;
     
     const laneIndex = Math.floor(Math.random() * 4);
     const targetLane = lanes[laneIndex];
@@ -128,7 +182,7 @@ function spawnNote() {
 }
 
 function updateGame() {
-    if (gameStarted) {
+    if (gameStarted && !gamePaused) {
         for (let i = notes.length - 1; i >= 0; i--) {
             let n = notes[i];
             n.y += 3.5;
@@ -148,10 +202,22 @@ function updateGame() {
 }
 requestAnimationFrame(updateGame);
 
+// 鍵盤操控監聽 (包括按鍵 A/S/D/F 同埋快捷鍵 ESC 暫停、R 重開)
 window.addEventListener('keydown', (e) => {
-    if (!gameStarted) return;
-    
     const key = e.key.toLowerCase();
+
+    // 快捷鍵：ESC 暫停，R 重新開始
+    if (e.key === 'Escape') {
+        if (gameStarted) togglePause();
+        return;
+    }
+    if (key === 'r') {
+        restartGame();
+        return;
+    }
+
+    if (!gameStarted || gamePaused) return;
+    
     const targetLane = document.querySelector(`.lane[data-key="${key}"]`);
     
     if (targetLane) {
@@ -160,7 +226,6 @@ window.addEventListener('keydown', (e) => {
         targetLane.classList.add('active');
         setTimeout(() => targetLane.classList.remove('active'), 100);
 
-        // 根據 Combo 觸發對應的和弦伴奏音效
         let activeChord = chords[Math.floor(combo / 5) % chords.length];
         playChordSound(activeChord.freqs);
 
@@ -171,7 +236,7 @@ window.addEventListener('keydown', (e) => {
             notes[hitIndex].element.remove();
             notes.splice(hitIndex, 1);
 
-            let multiplier = Math.floor(combo / 10) + 1; // 高連擊有分數加成
+            let multiplier = Math.floor(combo / 10) + 1;
 
             if (hitY >= 245 && hitY <= 280) {
                 score += 150 * multiplier;

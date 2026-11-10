@@ -17,6 +17,12 @@
         <div class="game-screen" id="gameScreen">
             <div id="hitFeedback" class="hit-feedback"></div>
             
+            <!-- 遊戲控制按鈕列 (暫停 / 重新開始) -->
+            <div class="game-top-bar">
+                <button id="pauseBtn" class="control-small-btn" title="暫停 (ESC)">⏸ 暫停</button>
+                <button id="restartBtn" class="control-small-btn" title="重新開始 (R)">🔄 重新開始</button>
+            </div>
+
             <div id="startOverlay" class="overlay">
                 <div class="setup-box">
                     <label for="audioFile" class="file-label">🎵 選擇 MP3 歌曲</label>
@@ -29,6 +35,15 @@
                     </div>
 
                     <button id="startBtn">按此開始遊戲</button>
+                </div>
+            </div>
+
+            <!-- 暫停遮罩 -->
+            <div id="pauseOverlay" class="overlay" style="display: none;">
+                <div class="setup-box">
+                    <h2 style="color: #00ffcc; text-shadow: 0 0 10px #00ffcc; margin-bottom: 10px;">遊戲暫停</h2>
+                    <button id="resumeBtn" class="sub-btn">繼續遊戲</button>
+                    <button id="restartFromPauseBtn" class="sub-btn">重新開始</button>
                 </div>
             </div>
 
@@ -53,7 +68,7 @@
         </div>
 
         <div class="controls-hint">
-            鍵盤 <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> | 連擊解鎖和弦伴奏！
+            鍵盤 <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> | <kbd>ESC</kbd> 暫停 <kbd>R</kbd> 重開
         </div>
     </div>
 
