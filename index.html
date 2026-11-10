@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>和弦節奏遊戲 (街機風格)</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="arcade-cabinet">
+        <header>
+            <h1>⚡ 街機和弦節奏 ⚡</h1>
+            <div class="score-board">分數: <span id="score">0</span> | 連擊: <span id="combo">0</span> COMBO</div>
+        </header>
+
+        <div class="game-screen" id="gameScreen">
+            <div id="startOverlay" class="overlay">
+                <button id="startBtn">按此開始遊戲</button>
+            </div>
+            <div class="lane-container">
+                <div class="lane" data-key="a" data-index="0">
+                    <div class="lane-label">A</div>
+                    <div class="hit-zone"></div>
+                </div>
+                <div class="lane" data-key="s" data-index="1">
+                    <div class="lane-label">S</div>
+                    <div class="hit-zone"></div>
+                </div>
+                <div class="lane" data-key="d" data-index="2">
+                    <div class="lane-label">D</div>
+                    <div class="hit-zone"></div>
+                </div>
+                <div class="lane" data-key="f" data-index="3">
+                    <div class="lane-label">F</div>
+                    <div class="hit-zone"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-hint">
+            請使用鍵盤按鍵：<kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> 接住跌落嘅音符！
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
