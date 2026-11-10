@@ -20,20 +20,29 @@ body {
 }
 
 header h1 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     text-shadow: 0 0 10px #00ffcc;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 }
 
 .score-board {
-    font-size: 1.1rem;
-    margin-bottom: 15px;
+    font-size: 1rem;
+    margin-bottom: 5px;
     color: #ffcc00;
+}
+
+.chord-display {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #ff007f;
+    text-shadow: 0 0 8px #ff007f;
+    height: 1.5rem;
+    margin-bottom: 10px;
 }
 
 .game-screen {
     background: #000;
-    height: 350px;
+    height: 330px;
     border: 2px dashed #00ffcc;
     position: relative;
     overflow: hidden;
@@ -85,13 +94,12 @@ header h1 {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
 
 .bpm-control {
     color: #fff;
     font-size: 0.9rem;
-    margin-top: 5px;
 }
 
 .bpm-control input {
@@ -126,7 +134,7 @@ header h1 {
 }
 
 .file-name {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #aaa;
     max-width: 250px;
     white-space: nowrap;
@@ -138,15 +146,14 @@ header h1 {
     background: #ff007f;
     color: white;
     border: none;
-    padding: 12px 24px;
-    font-size: 1.2rem;
+    padding: 10px 20px;
+    font-size: 1.1rem;
     font-family: 'Courier New', Courier, monospace;
     font-weight: bold;
     cursor: pointer;
     box-shadow: 0 0 15px #ff007f;
     border-radius: 6px;
     transition: 0.2s;
-    margin-top: 5px;
 }
 
 #startBtn:hover {
@@ -210,7 +217,7 @@ header h1 {
 }
 
 .controls-hint {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: #aaa;
 }
 
