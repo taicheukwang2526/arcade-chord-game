@@ -25,16 +25,23 @@
                 <button id="restartBtn" class="control-small-btn" title="重新開始 (R)">🔄 重開</button>
             </div>
 
-            <!-- 開始遮罩 -->
+            <!-- 開始與設定遮罩 -->
             <div id="startOverlay" class="overlay">
                 <div class="setup-box">
                     <label for="audioFile" class="file-label">🎵 選擇 MP3 歌曲</label>
                     <input type="file" id="audioFile" accept="audio/mp3, audio/wav, audio/ogg">
-                    <div id="fileName" class="file-name">未選擇歌曲（預設 60 秒節奏）</div>
+                    <div id="fileName" class="file-name">未選擇歌曲（預設隨機節奏）</div>
                     
                     <div class="bpm-control">
                         <label for="bpmInput">歌曲 BPM: </label>
                         <input type="number" id="bpmInput" value="120" min="60" max="240">
+                    </div>
+
+                    <!-- 新增：JSON 譜面匯入區 -->
+                    <div class="chart-control">
+                        <label for="chartFile" class="file-label chart-label">📂 匯入 JSON 譜面</label>
+                        <input type="file" id="chartFile" accept=".json">
+                        <div id="chartName" class="file-name">未匯入譜面（使用自動生成）</div>
                     </div>
 
                     <button id="startBtn">按此開始遊戲</button>

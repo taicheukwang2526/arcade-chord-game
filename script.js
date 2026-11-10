@@ -8,6 +8,10 @@ let spawnInterval;
 let timerInterval;
 let timeRemaining = 60;
 
+// 自定譜面相關變數
+let customChart = null; 
+let songStartTime = 0;
+
 const scoreDisplay = document.getElementById('score');
 const comboDisplay = document.getElementById('combo');
 const timeDisplay = document.getElementById('timeDisplay');
@@ -32,6 +36,8 @@ const playAgainBtn = document.getElementById('playAgainBtn');
 const hitFeedback = document.getElementById('hitFeedback');
 const audioFile = document.getElementById('audioFile');
 const fileNameDisplay = document.getElementById('fileName');
+const chartFile = document.getElementById('chartFile');
+const chartNameDisplay = document.getElementById('chartName');
 const bpmInput = document.getElementById('bpmInput');
 const bgm = document.getElementById('bgm');
 
@@ -44,12 +50,32 @@ const chords = [
     { name: "G Major (G - B - D)", freqs: [392.00, 493.88, 587.33] }
 ];
 
+// 1. 監聽 MP3 音樂上載
 audioFile.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
         fileNameDisplay.textContent = `已選擇：${file.name}`;
         const fileURL = URL.createObjectURL(file);
         bgm.src = fileURL;
+    }
+});
+
+// 2. 監聽 JSON 譜面檔案上載
+chartFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                customChart = JSON.parse(event.target.result);
+                chartNameDisplay.textContent = `譜面載入成功：${file.name} (${customChart.length} 音符)`;
+            } catch (err) {
+                alert('JSON 格式錯誤，請檢查檔案內容！');
+                customChart = null;
+                chartNameDisplay.textContent = `譜面格式錯誤`;
+            }
+        };
+        reader.readAsText(file);
     }
 });
 
@@ -88,7 +114,6 @@ function showFeedback(text, type) {
     }, 300);
 }
 
-// 觸發畫面震動特效 (Screen Shake)
 function triggerScreenShake() {
     cabinet.classList.add('shake');
     setTimeout(() => {
@@ -96,7 +121,6 @@ function triggerScreenShake() {
     }, 150);
 }
 
-// 更新動態視覺（和弦與高連擊暴走狀態）
 function updateVisualEffects() {
     if (combo >= 20) {
         cabinet.classList.add('surge-mode');
@@ -166,11 +190,15 @@ function startGame() {
     }
     timeDisplay.textContent = timeRemaining;
 
-    const bpm = parseInt(bpmInput.value) || 120;
-    const intervalMs = (60 / bpm) * 1000;
-    
-    if (spawnInterval) clearInterval(spawnInterval);
-    spawnInterval = setInterval(spawnNote, intervalMs);
+    songStartTime = Date.now();
+
+    // 如果沒有匯入自定 JSON 譜面，則使用原有的 BPM 自動生成模式
+    if (!customChart) {
+        const bpm = parseInt(bpmInput.value) || 120;
+        const intervalMs = (60 / bpm) * 1000;
+        if (spawnInterval) clearInterval(spawnInterval);
+        spawnInterval = setInterval(spawnRandomNote, intervalMs);
+    }
 
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
@@ -232,12 +260,15 @@ playAgainBtn.addEventListener('click', startGame);
 
 bgm.addEventListener('ended', gameOver);
 
-function spawnNote() {
-    if (!gameStarted || gamePaused) return;
-    
-    const laneIndex = Math.floor(Math.random() * 4);
-    const targetLane = lanes[laneIndex];
+// 隨機音符生成（預設模式）
+function spawnRandomNote() {
+    if (!gameStarted || gamePaused || customChart) return;
+    createNoteElement(Math.floor(Math.random() * 4));
+}
 
+// 建立實體音符 DOM
+function createNoteElement(laneIndex) {
+    const targetLane = lanes[laneIndex];
     const note = document.createElement('div');
     note.classList.add('note');
     note.dataset.lane = laneIndex;
@@ -247,8 +278,24 @@ function spawnNote() {
     notes.push({ element: note, lane: laneIndex, y: 0 });
 }
 
+// 遊戲主循環（同時支援隨機 BPM 模式與 JSON 譜面時間戳模式）
 function updateGame() {
     if (gameStarted && !gamePaused) {
+        // 如果有載入自定 JSON 譜面，根據當前音樂播放時間（秒）精準生成音符
+        if (customChart && bgm.src) {
+            let currentAudioTime = bgm.currentTime;
+            // 檢查譜面中有沒有到達該時間點的音符（預留 1.5 秒讓音符由頂部落下）
+            for (let i = customChart.length - 1; i >= 0; i--) {
+                let noteData = customChart[i];
+                // 如果音符時間點符合，且未被生成過
+                if (!noteData.spawned && currentAudioTime >= (noteData.time - 1.5)) {
+                    createNoteElement(noteData.lane);
+                    noteData.spawned = true;
+                }
+            }
+        }
+
+        // 移動所有場上的音符
         for (let i = notes.length - 1; i >= 0; i--) {
             let n = notes[i];
             n.y += 3.5;
@@ -268,7 +315,7 @@ function updateGame() {
 }
 requestAnimationFrame(updateGame);
 
-// 核心判定邏輯（加入震動與暴走觸發）
+// 核心判定邏輯
 function handleLaneHit(laneIndex, isTouch = false) {
     if (!gameStarted || gamePaused) return;
 
@@ -297,7 +344,7 @@ function handleLaneHit(laneIndex, isTouch = false) {
             score += 150 * multiplier;
             combo += 1;
             showFeedback('PERFECT!', 'perfect');
-            triggerScreenShake(); // 打出 PERFECT 時觸發畫面震動！
+            triggerScreenShake();
         } else {
             score += 80 * multiplier;
             combo += 1;
@@ -314,7 +361,7 @@ function handleLaneHit(laneIndex, isTouch = false) {
 
     scoreDisplay.textContent = score;
     comboDisplay.textContent = combo;
-    updateVisualEffects();
+    updateChordState();
 }
 
 // 1. 電腦鍵盤事件
@@ -336,7 +383,7 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// 2. 手機觸控 / 滑鼠點擊事件
+// 2. 手機觸控事件
 lanes.forEach((lane) => {
     const laneIndex = parseInt(lane.dataset.index);
     
