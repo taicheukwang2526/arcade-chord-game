@@ -249,7 +249,7 @@ function updateGame() {
 }
 requestAnimationFrame(updateGame);
 
-// 核心判定邏輯（共用函數：傳入軌道索引）
+// 核心判定邏輯
 function handleLaneHit(laneIndex) {
     if (!gameStarted || gamePaused) return;
 
@@ -292,7 +292,7 @@ function handleLaneHit(laneIndex) {
     updateChordState();
 }
 
-// 1. 鍵盤事件監聽
+// 1. 電腦鍵盤事件監聽
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
 
@@ -311,18 +311,13 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// 2. 手機觸控 / 滑鼠點擊事件監聽（直接點擊軌道即可遊玩）
+// 2. 升級為 Pointer Events，完美支援手機多點觸控（Multi-touch）
 lanes.forEach((lane) => {
     const laneIndex = parseInt(lane.dataset.index);
     
-    // 支援手機觸控 (touchstart)
-    lane.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // 防止手機放大或滾動畫面
-        handleLaneHit(laneIndex);
-    }, { passive: false });
-
-    // 同時支援電腦滑鼠點擊 (mousedown) 方便測試
-    lane.addEventListener('mousedown', () => {
+    // 使用 pointerdown 取代 touchstart/mousedown，支援多指同時按下不衝突
+    lane.addEventListener('pointerdown', (e) => {
+        e.preventDefault(); // 阻止默認滑鼠/觸控點擊延遲
         handleLaneHit(laneIndex);
     });
 });

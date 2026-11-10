@@ -7,6 +7,8 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
+    /* 防止手機瀏覽器上下拉動或雙指縮放畫面 */
+    touch-action: none; 
 }
 
 .arcade-cabinet {
@@ -130,7 +132,6 @@ header h1 {
     font-size: 1.3rem;
 }
 
-/* 結算畫面特有樣式 */
 .result-box {
     animation: popIn 0.3s ease-out;
 }
@@ -253,6 +254,10 @@ header h1 {
     align-items: center;
     padding-bottom: 20px;
     transition: background 0.1s;
+    /* 關鍵：禁用手機預設觸控手勢，將所有點擊權交給遊戲判定 */
+    touch-action: none;
+    -webkit-touch-callout: none;
+    user-select: none;
 }
 
 .lane:last-child {
