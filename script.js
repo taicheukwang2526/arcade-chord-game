@@ -235,7 +235,8 @@ function updateGame() {
             n.y += 3.5;
             n.element.style.top = n.y + 'px';
 
-            if (n.y > 310) {
+            // 調整 Miss 邊界（配合手機端稍為放寬）
+            if (n.y > 325) {
                 n.element.remove();
                 notes.splice(i, 1);
                 combo = 0;
@@ -249,8 +250,8 @@ function updateGame() {
 }
 requestAnimationFrame(updateGame);
 
-// 核心判定邏輯
-function handleLaneHit(laneIndex) {
+// 核心判定邏輯（透過 isTouch 參數區分手機觸控與電腦鍵盤）
+function handleLaneHit(laneIndex, isTouch = false) {
     if (!gameStarted || gamePaused) return;
 
     const targetLane = lanes[laneIndex];
@@ -260,7 +261,15 @@ function handleLaneHit(laneIndex) {
     let activeChord = chords[Math.floor(combo / 5) % chords.length];
     playChordSound(activeChord.freqs);
 
-    let hitIndex = notes.findIndex(n => n.lane === laneIndex && n.y >= 210 && n.y <= 300);
+    // 根據裝置動態調整判定範圍：
+    // 電腦鍵盤維持標準: y >= 210 && y <= 300
+    // 手機觸控放寬寬容度: y >= 195 && y <= 315
+    let minHitY = isTouch ? 195 : 210;
+    let maxHitY = isTouch ? 315 : 300;
+    let perfectMin = isTouch ? 235 : 245;
+    let perfectMax = isTouch ? 290 : 280;
+
+    let hitIndex = notes.findIndex(n => n.lane === laneIndex && n.y >= minHitY && n.y <= maxHitY);
 
     if (hitIndex !== -1) {
         const hitY = notes[hitIndex].y;
@@ -269,7 +278,7 @@ function handleLaneHit(laneIndex) {
 
         let multiplier = Math.floor(combo / 10) + 1;
 
-        if (hitY >= 245 && hitY <= 280) {
+        if (hitY >= perfectMin && hitY <= perfectMax) {
             score += 150 * multiplier;
             combo += 1;
             showFeedback('PERFECT!', 'perfect');
@@ -292,7 +301,7 @@ function handleLaneHit(laneIndex) {
     updateChordState();
 }
 
-// 1. 電腦鍵盤事件監聽
+// 1. 電腦鍵盤事件（isTouch = false）
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
 
@@ -307,17 +316,16 @@ window.addEventListener('keydown', (e) => {
 
     const keyMap = { 'a': 0, 's': 1, 'd': 2, 'f': 3 };
     if (keyMap.hasOwnProperty(key)) {
-        handleLaneHit(keyMap[key]);
+        handleLaneHit(keyMap[key], false);
     }
 });
 
-// 2. 升級為 Pointer Events，完美支援手機多點觸控（Multi-touch）
+// 2. 手機觸控 / 滑鼠點擊事件（isTouch = true，享有放寬的判定窗口）
 lanes.forEach((lane) => {
     const laneIndex = parseInt(lane.dataset.index);
     
-    // 使用 pointerdown 取代 touchstart/mousedown，支援多指同時按下不衝突
     lane.addEventListener('pointerdown', (e) => {
-        e.preventDefault(); // 阻止默認滑鼠/觸控點擊延遲
-        handleLaneHit(laneIndex);
+        e.preventDefault();
+        handleLaneHit(laneIndex, true);
     });
 });
