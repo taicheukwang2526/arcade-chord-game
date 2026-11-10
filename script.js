@@ -13,6 +13,7 @@ const comboDisplay = document.getElementById('combo');
 const timeDisplay = document.getElementById('timeDisplay');
 const chordDisplay = document.getElementById('chordDisplay');
 const lanes = document.querySelectorAll('.lane');
+const cabinet = document.querySelector('.arcade-cabinet');
 
 const startBtn = document.getElementById('startBtn');
 const startOverlay = document.getElementById('startOverlay');
@@ -87,7 +88,22 @@ function showFeedback(text, type) {
     }, 300);
 }
 
-function updateChordState() {
+// 觸發畫面震動特效 (Screen Shake)
+function triggerScreenShake() {
+    cabinet.classList.add('shake');
+    setTimeout(() => {
+        cabinet.classList.remove('shake');
+    }, 150);
+}
+
+// 更新動態視覺（和弦與高連擊暴走狀態）
+function updateVisualEffects() {
+    if (combo >= 20) {
+        cabinet.classList.add('surge-mode');
+    } else {
+        cabinet.classList.remove('surge-mode');
+    }
+
     if (combo >= 15) {
         let chordIndex = Math.floor(combo / 5) % chords.length;
         chordDisplay.textContent = `✨ 虛擬樂隊伴奏中: ${chords[chordIndex].name}`;
@@ -109,6 +125,7 @@ function gameOver() {
     gameStarted = false;
     clearInterval(spawnInterval);
     clearInterval(timerInterval);
+    cabinet.classList.remove('surge-mode');
     
     if (bgm.src) {
         bgm.pause();
@@ -131,6 +148,7 @@ function startGame() {
     score = 0;
     combo = 0;
     maxCombo = 0;
+    cabinet.classList.remove('surge-mode');
     
     scoreDisplay.textContent = score;
     comboDisplay.textContent = combo;
@@ -190,6 +208,7 @@ function restartGame() {
     notes = [];
     gameStarted = false;
     gamePaused = false;
+    cabinet.classList.remove('surge-mode');
     
     pauseOverlay.style.display = 'none';
     resultOverlay.style.display = 'none';
@@ -235,13 +254,12 @@ function updateGame() {
             n.y += 3.5;
             n.element.style.top = n.y + 'px';
 
-            // 調整 Miss 邊界（配合手機端稍為放寬）
             if (n.y > 325) {
                 n.element.remove();
                 notes.splice(i, 1);
                 combo = 0;
                 comboDisplay.textContent = combo;
-                updateChordState();
+                updateVisualEffects();
                 showFeedback('MISS', 'miss');
             }
         }
@@ -250,7 +268,7 @@ function updateGame() {
 }
 requestAnimationFrame(updateGame);
 
-// 核心判定邏輯（透過 isTouch 參數區分手機觸控與電腦鍵盤）
+// 核心判定邏輯（加入震動與暴走觸發）
 function handleLaneHit(laneIndex, isTouch = false) {
     if (!gameStarted || gamePaused) return;
 
@@ -261,9 +279,6 @@ function handleLaneHit(laneIndex, isTouch = false) {
     let activeChord = chords[Math.floor(combo / 5) % chords.length];
     playChordSound(activeChord.freqs);
 
-    // 根據裝置動態調整判定範圍：
-    // 電腦鍵盤維持標準: y >= 210 && y <= 300
-    // 手機觸控放寬寬容度: y >= 195 && y <= 315
     let minHitY = isTouch ? 195 : 210;
     let maxHitY = isTouch ? 315 : 300;
     let perfectMin = isTouch ? 235 : 245;
@@ -282,6 +297,7 @@ function handleLaneHit(laneIndex, isTouch = false) {
             score += 150 * multiplier;
             combo += 1;
             showFeedback('PERFECT!', 'perfect');
+            triggerScreenShake(); // 打出 PERFECT 時觸發畫面震動！
         } else {
             score += 80 * multiplier;
             combo += 1;
@@ -298,10 +314,10 @@ function handleLaneHit(laneIndex, isTouch = false) {
 
     scoreDisplay.textContent = score;
     comboDisplay.textContent = combo;
-    updateChordState();
+    updateVisualEffects();
 }
 
-// 1. 電腦鍵盤事件（isTouch = false）
+// 1. 電腦鍵盤事件
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
 
@@ -320,7 +336,7 @@ window.addEventListener('keydown', (e) => {
     }
 });
 
-// 2. 手機觸控 / 滑鼠點擊事件（isTouch = true，享有放寬的判定窗口）
+// 2. 手機觸控 / 滑鼠點擊事件
 lanes.forEach((lane) => {
     const laneIndex = parseInt(lane.dataset.index);
     

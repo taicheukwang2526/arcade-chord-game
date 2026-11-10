@@ -7,10 +7,10 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    /* 防止手機瀏覽器上下拉動或雙指縮放畫面 */
     touch-action: none; 
 }
 
+/* 街機本體外框 (支援震動特效) */
 .arcade-cabinet {
     background: #1e1e2f;
     border: 4px solid #ff007f;
@@ -19,6 +19,33 @@ body {
     padding: 20px;
     width: 450px;
     text-align: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+/* 高連擊暴走狀態 (Combo >= 20) */
+.arcade-cabinet.surge-mode {
+    border-color: #ffcc00;
+    box-shadow: 0 0 30px #ffcc00, inset 0 0 25px #ff007f;
+    animation: cabinetPulse 0.5s infinite alternate;
+}
+
+@keyframes cabinetPulse {
+    0% { transform: scale(1); }
+    100% { transform: scale(1.01); }
+}
+
+/* 畫面震動特效 (Screen Shake) */
+.arcade-cabinet.shake {
+    animation: screenShake 0.15s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes screenShake {
+    0% { transform: translate(0, 0); }
+    20% { transform: translate(-3px, 3px); }
+    40% { transform: translate(3px, -2px); }
+    60% { transform: translate(-2px, -2px); }
+    80% { transform: translate(2px, 2px); }
+    100% { transform: translate(0, 0); }
 }
 
 header h1 {
@@ -254,7 +281,6 @@ header h1 {
     align-items: center;
     padding-bottom: 20px;
     transition: background 0.1s;
-    /* 關鍵：禁用手機預設觸控手勢，將所有點擊權交給遊戲判定 */
     touch-action: none;
     -webkit-touch-callout: none;
     user-select: none;
