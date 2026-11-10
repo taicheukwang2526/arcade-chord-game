@@ -14,11 +14,19 @@
         </header>
 
         <div class="game-screen" id="gameScreen">
+            <div id="hitFeedback" class="hit-feedback"></div>
+            
             <div id="startOverlay" class="overlay">
                 <div class="setup-box">
                     <label for="audioFile" class="file-label">🎵 選擇 MP3 歌曲</label>
                     <input type="file" id="audioFile" accept="audio/mp3, audio/wav, audio/ogg">
                     <div id="fileName" class="file-name">未選擇歌曲（將使用預設節奏）</div>
+                    
+                    <div class="bpm-control">
+                        <label for="bpmInput">歌曲 BPM (節拍速度): </label>
+                        <input type="number" id="bpmInput" value="120" min="60" max="240">
+                    </div>
+
                     <button id="startBtn">按此開始遊戲</button>
                 </div>
             </div>
@@ -48,7 +56,6 @@
         </div>
     </div>
 
-    <!-- 隱藏的音訊播放器 -->
     <audio id="bgm"></audio>
 
     <script src="script.js"></script>

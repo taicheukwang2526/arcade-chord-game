@@ -40,6 +40,34 @@ header h1 {
     margin-bottom: 15px;
 }
 
+.hit-feedback {
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    font-weight: bold;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.1s, transform 0.1s;
+}
+
+.hit-feedback.perfect {
+    color: #00ffcc;
+    text-shadow: 0 0 10px #00ffcc;
+}
+
+.hit-feedback.good {
+    color: #ffcc00;
+    text-shadow: 0 0 10px #ffcc00;
+}
+
+.hit-feedback.miss {
+    color: #ff007f;
+    text-shadow: 0 0 10px #ff007f;
+}
+
 .overlay {
     position: absolute;
     top: 0;
@@ -58,6 +86,23 @@ header h1 {
     flex-direction: column;
     align-items: center;
     gap: 12px;
+}
+
+.bpm-control {
+    color: #fff;
+    font-size: 0.9rem;
+    margin-top: 5px;
+}
+
+.bpm-control input {
+    width: 60px;
+    background: #222;
+    border: 1px solid #00ffcc;
+    color: #00ffcc;
+    padding: 4px;
+    text-align: center;
+    font-family: inherit;
+    font-weight: bold;
 }
 
 .file-label {
@@ -101,7 +146,7 @@ header h1 {
     box-shadow: 0 0 15px #ff007f;
     border-radius: 6px;
     transition: 0.2s;
-    margin-top: 10px;
+    margin-top: 5px;
 }
 
 #startBtn:hover {
