@@ -6,7 +6,7 @@ let gamePaused = false;
 let notes = [];
 let spawnInterval;
 let timerInterval;
-let timeRemaining = 60; // 預設 60 秒倒數
+let timeRemaining = 60;
 
 const scoreDisplay = document.getElementById('score');
 const comboDisplay = document.getElementById('combo');
@@ -98,7 +98,6 @@ function updateChordState() {
     }
 }
 
-// 計算評價等級 S / A / B / C
 function calculateRank(finalScore) {
     if (finalScore >= 3000) return 'S';
     if (finalScore >= 2000) return 'A';
@@ -106,7 +105,6 @@ function calculateRank(finalScore) {
     return 'C';
 }
 
-// 結束遊戲並顯示結算畫面
 function gameOver() {
     gameStarted = false;
     clearInterval(spawnInterval);
@@ -116,17 +114,13 @@ function gameOver() {
         bgm.pause();
     }
 
-    // 計算與呈現數據
     let rank = calculateRank(score);
     resultRank.textContent = rank;
     finalScoreDisplay.textContent = score;
     maxComboDisplay.textContent = maxCombo;
-
-    // 顯示結算彈窗
     resultOverlay.style.display = 'flex';
 }
 
-// 開始遊戲
 function startGame() {
     startOverlay.style.display = 'none';
     pauseOverlay.style.display = 'none';
@@ -145,7 +139,6 @@ function startGame() {
     notes.forEach(n => n.element.remove());
     notes = [];
 
-    // 設定時間（有 MP3 就跟 MP3 長度，沒有就預設 60 秒）
     if (bgm.src) {
         bgm.currentTime = 0;
         bgm.play();
@@ -161,7 +154,6 @@ function startGame() {
     if (spawnInterval) clearInterval(spawnInterval);
     spawnInterval = setInterval(spawnNote, intervalMs);
 
-    // 開始倒數計時器
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         if (!gamePaused && gameStarted) {
@@ -257,6 +249,50 @@ function updateGame() {
 }
 requestAnimationFrame(updateGame);
 
+// 核心判定邏輯（共用函數：傳入軌道索引）
+function handleLaneHit(laneIndex) {
+    if (!gameStarted || gamePaused) return;
+
+    const targetLane = lanes[laneIndex];
+    targetLane.classList.add('active');
+    setTimeout(() => targetLane.classList.remove('active'), 100);
+
+    let activeChord = chords[Math.floor(combo / 5) % chords.length];
+    playChordSound(activeChord.freqs);
+
+    let hitIndex = notes.findIndex(n => n.lane === laneIndex && n.y >= 210 && n.y <= 300);
+
+    if (hitIndex !== -1) {
+        const hitY = notes[hitIndex].y;
+        notes[hitIndex].element.remove();
+        notes.splice(hitIndex, 1);
+
+        let multiplier = Math.floor(combo / 10) + 1;
+
+        if (hitY >= 245 && hitY <= 280) {
+            score += 150 * multiplier;
+            combo += 1;
+            showFeedback('PERFECT!', 'perfect');
+        } else {
+            score += 80 * multiplier;
+            combo += 1;
+            showFeedback('GOOD', 'good');
+        }
+
+        if (combo > maxCombo) {
+            maxCombo = combo;
+        }
+    } else {
+        combo = 0;
+        showFeedback('MISS', 'miss');
+    }
+
+    scoreDisplay.textContent = score;
+    comboDisplay.textContent = combo;
+    updateChordState();
+}
+
+// 1. 鍵盤事件監聽
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
 
@@ -269,49 +305,24 @@ window.addEventListener('keydown', (e) => {
         return;
     }
 
-    if (!gameStarted || gamePaused) return;
-    
-    const targetLane = document.querySelector(`.lane[data-key="${key}"]`);
-    
-    if (targetLane) {
-        const laneIndex = parseInt(targetLane.dataset.index);
-        
-        targetLane.classList.add('active');
-        setTimeout(() => targetLane.classList.remove('active'), 100);
-
-        let activeChord = chords[Math.floor(combo / 5) % chords.length];
-        playChordSound(activeChord.freqs);
-
-        let hitIndex = notes.findIndex(n => n.lane === laneIndex && n.y >= 210 && n.y <= 300);
-
-        if (hitIndex !== -1) {
-            const hitY = notes[hitIndex].y;
-            notes[hitIndex].element.remove();
-            notes.splice(hitIndex, 1);
-
-            let multiplier = Math.floor(combo / 10) + 1;
-
-            if (hitY >= 245 && hitY <= 280) {
-                score += 150 * multiplier;
-                combo += 1;
-                showFeedback('PERFECT!', 'perfect');
-            } else {
-                score += 80 * multiplier;
-                combo += 1;
-                showFeedback('GOOD', 'good');
-            }
-
-            // 更新最高連擊記錄
-            if (combo > maxCombo) {
-                maxCombo = combo;
-            }
-        } else {
-            combo = 0;
-            showFeedback('MISS', 'miss');
-        }
-
-        scoreDisplay.textContent = score;
-        comboDisplay.textContent = combo;
-        updateChordState();
+    const keyMap = { 'a': 0, 's': 1, 'd': 2, 'f': 3 };
+    if (keyMap.hasOwnProperty(key)) {
+        handleLaneHit(keyMap[key]);
     }
+});
+
+// 2. 手機觸控 / 滑鼠點擊事件監聽（直接點擊軌道即可遊玩）
+lanes.forEach((lane) => {
+    const laneIndex = parseInt(lane.dataset.index);
+    
+    // 支援手機觸控 (touchstart)
+    lane.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // 防止手機放大或滾動畫面
+        handleLaneHit(laneIndex);
+    }, { passive: false });
+
+    // 同時支援電腦滑鼠點擊 (mousedown) 方便測試
+    lane.addEventListener('mousedown', () => {
+        handleLaneHit(laneIndex);
+    });
 });
