@@ -15,8 +15,14 @@
 
         <div class="game-screen" id="gameScreen">
             <div id="startOverlay" class="overlay">
-                <button id="startBtn">按此開始遊戲</button>
+                <div class="setup-box">
+                    <label for="audioFile" class="file-label">🎵 選擇 MP3 歌曲</label>
+                    <input type="file" id="audioFile" accept="audio/mp3, audio/wav, audio/ogg">
+                    <div id="fileName" class="file-name">未選擇歌曲（將使用預設節奏）</div>
+                    <button id="startBtn">按此開始遊戲</button>
+                </div>
             </div>
+
             <div class="lane-container">
                 <div class="lane" data-key="a" data-index="0">
                     <div class="lane-label">A</div>
@@ -41,6 +47,9 @@
             請使用鍵盤按鍵：<kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>F</kbd> 接住跌落嘅音符！
         </div>
     </div>
+
+    <!-- 隱藏的音訊播放器 -->
+    <audio id="bgm"></audio>
 
     <script src="script.js"></script>
 </body>

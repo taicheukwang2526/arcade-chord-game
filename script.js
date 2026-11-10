@@ -10,9 +10,23 @@ const lanes = document.querySelectorAll('.lane');
 const startBtn = document.getElementById('startBtn');
 const startOverlay = document.getElementById('startOverlay');
 
-// 初始化 Web Audio API (用來製造打擊音效)
+const audioFile = document.getElementById('audioFile');
+const fileNameDisplay = document.getElementById('fileName');
+const bgm = document.getElementById('bgm');
+
 let audioCtx = null;
 
+// 讀取上載的 MP3 檔案
+audioFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+        fileNameDisplay.textContent = `已選擇：${file.name}`;
+        const fileURL = URL.createObjectURL(file);
+        bgm.src = fileURL;
+    }
+});
+
+// 打擊音效 (Web Audio API)
 function playHitSound(freq = 440) {
     if (!audioCtx) {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -20,7 +34,7 @@ function playHitSound(freq = 440) {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
     
-    osc.type = 'square'; // 復古 8-bit 街機聲
+    osc.type = 'square';
     osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
     
     gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
@@ -41,10 +55,23 @@ startBtn.addEventListener('click', () => {
     combo = 0;
     scoreDisplay.textContent = score;
     comboDisplay.textContent = combo;
+
+    // 如果有上載音樂就播放 MP3
+    if (bgm.src) {
+        bgm.currentTime = 0;
+        bgm.play();
+    }
     
-    // 開始生成音符
     if (spawnInterval) clearInterval(spawnInterval);
-    spawnInterval = setInterval(spawnNote, 800);
+    spawnInterval = setInterval(spawnNote, 700);
+});
+
+// 當歌曲完結時停止遊戲
+bgm.addEventListener('ended', () => {
+    gameStarted = false;
+    clearInterval(spawnInterval);
+    startOverlay.style.display = 'flex';
+    fileNameDisplay.textContent += ' (已完結)';
 });
 
 function spawnNote() {
@@ -67,10 +94,9 @@ function updateGame() {
     if (gameStarted) {
         for (let i = notes.length - 1; i >= 0; i--) {
             let n = notes[i];
-            n.y += 3.5; // 落下速度
+            n.y += 3.5;
             n.element.style.top = n.y + 'px';
 
-            // Miss 判定
             if (n.y > 300) {
                 n.element.remove();
                 notes.splice(i, 1);
@@ -96,8 +122,7 @@ window.addEventListener('keydown', (e) => {
         targetLane.classList.add('active');
         setTimeout(() => targetLane.classList.remove('active'), 100);
 
-        // 不同軌道發出唔同音高
-        const freqs = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+        const freqs = [261.63, 329.63, 392.00, 523.25];
         playHitSound(freqs[laneIndex]);
 
         let hitIndex = notes.findIndex(n => n.lane === laneIndex && n.y >= 220 && n.y <= 300);
