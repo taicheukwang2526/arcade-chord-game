@@ -1,14 +1,19 @@
 let score = 0;
 let combo = 0;
+let maxCombo = 0;
 let gameStarted = false;
 let gamePaused = false;
 let notes = [];
 let spawnInterval;
+let timerInterval;
+let timeRemaining = 60; // 預設 60 秒倒數
 
 const scoreDisplay = document.getElementById('score');
 const comboDisplay = document.getElementById('combo');
+const timeDisplay = document.getElementById('timeDisplay');
 const chordDisplay = document.getElementById('chordDisplay');
 const lanes = document.querySelectorAll('.lane');
+
 const startBtn = document.getElementById('startBtn');
 const startOverlay = document.getElementById('startOverlay');
 const pauseOverlay = document.getElementById('pauseOverlay');
@@ -16,8 +21,14 @@ const pauseBtn = document.getElementById('pauseBtn');
 const resumeBtn = document.getElementById('resumeBtn');
 const restartBtn = document.getElementById('restartBtn');
 const restartFromPauseBtn = document.getElementById('restartFromPauseBtn');
-const hitFeedback = document.getElementById('hitFeedback');
 
+const resultOverlay = document.getElementById('resultOverlay');
+const resultRank = document.getElementById('resultRank');
+const finalScoreDisplay = document.getElementById('finalScore');
+const maxComboDisplay = document.getElementById('maxCombo');
+const playAgainBtn = document.getElementById('playAgainBtn');
+
+const hitFeedback = document.getElementById('hitFeedback');
 const audioFile = document.getElementById('audioFile');
 const fileNameDisplay = document.getElementById('fileName');
 const bpmInput = document.getElementById('bpmInput');
@@ -87,35 +98,82 @@ function updateChordState() {
     }
 }
 
+// 計算評價等級 S / A / B / C
+function calculateRank(finalScore) {
+    if (finalScore >= 3000) return 'S';
+    if (finalScore >= 2000) return 'A';
+    if (finalScore >= 1000) return 'B';
+    return 'C';
+}
+
+// 結束遊戲並顯示結算畫面
+function gameOver() {
+    gameStarted = false;
+    clearInterval(spawnInterval);
+    clearInterval(timerInterval);
+    
+    if (bgm.src) {
+        bgm.pause();
+    }
+
+    // 計算與呈現數據
+    let rank = calculateRank(score);
+    resultRank.textContent = rank;
+    finalScoreDisplay.textContent = score;
+    maxComboDisplay.textContent = maxCombo;
+
+    // 顯示結算彈窗
+    resultOverlay.style.display = 'flex';
+}
+
 // 開始遊戲
 function startGame() {
     startOverlay.style.display = 'none';
     pauseOverlay.style.display = 'none';
+    resultOverlay.style.display = 'none';
+    
     gameStarted = true;
     gamePaused = false;
     score = 0;
     combo = 0;
+    maxCombo = 0;
+    
     scoreDisplay.textContent = score;
     comboDisplay.textContent = combo;
     chordDisplay.textContent = `準備進入節奏...`;
 
-    // 清除舊音符
     notes.forEach(n => n.element.remove());
     notes = [];
 
+    // 設定時間（有 MP3 就跟 MP3 長度，沒有就預設 60 秒）
     if (bgm.src) {
         bgm.currentTime = 0;
         bgm.play();
+        timeRemaining = Math.floor(bgm.duration) || 60;
+    } else {
+        timeRemaining = 60;
     }
+    timeDisplay.textContent = timeRemaining;
 
     const bpm = parseInt(bpmInput.value) || 120;
     const intervalMs = (60 / bpm) * 1000;
     
     if (spawnInterval) clearInterval(spawnInterval);
     spawnInterval = setInterval(spawnNote, intervalMs);
+
+    // 開始倒數計時器
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if (!gamePaused && gameStarted) {
+            timeRemaining--;
+            timeDisplay.textContent = timeRemaining;
+            if (timeRemaining <= 0) {
+                gameOver();
+            }
+        }
+    }, 1000);
 }
 
-// 暫停遊戲
 function togglePause() {
     if (!gameStarted) return;
     
@@ -123,19 +181,15 @@ function togglePause() {
     if (gamePaused) {
         pauseOverlay.style.display = 'flex';
         if (bgm.src) bgm.pause();
-        clearInterval(spawnInterval);
     } else {
         pauseOverlay.style.display = 'none';
         if (bgm.src) bgm.play();
-        const bpm = parseInt(bpmInput.value) || 120;
-        const intervalMs = (60 / bpm) * 1000;
-        spawnInterval = setInterval(spawnNote, intervalMs);
     }
 }
 
-// 重新開始
 function restartGame() {
     if (spawnInterval) clearInterval(spawnInterval);
+    if (timerInterval) clearInterval(timerInterval);
     if (bgm.src) {
         bgm.pause();
         bgm.currentTime = 0;
@@ -144,12 +198,17 @@ function restartGame() {
     notes = [];
     gameStarted = false;
     gamePaused = false;
+    
     pauseOverlay.style.display = 'none';
+    resultOverlay.style.display = 'none';
     startOverlay.style.display = 'flex';
+    
     score = 0;
     combo = 0;
+    maxCombo = 0;
     scoreDisplay.textContent = score;
     comboDisplay.textContent = combo;
+    timeDisplay.textContent = 60;
     chordDisplay.textContent = `準備就緒`;
 }
 
@@ -158,13 +217,9 @@ resumeBtn.addEventListener('click', togglePause);
 pauseBtn.addEventListener('click', togglePause);
 restartBtn.addEventListener('click', restartGame);
 restartFromPauseBtn.addEventListener('click', restartGame);
+playAgainBtn.addEventListener('click', startGame);
 
-bgm.addEventListener('ended', () => {
-    gameStarted = false;
-    clearInterval(spawnInterval);
-    startOverlay.style.display = 'flex';
-    chordDisplay.textContent = `演奏完結！最終得分: ${score}`;
-});
+bgm.addEventListener('ended', gameOver);
 
 function spawnNote() {
     if (!gameStarted || gamePaused) return;
@@ -202,11 +257,9 @@ function updateGame() {
 }
 requestAnimationFrame(updateGame);
 
-// 鍵盤操控監聽 (包括按鍵 A/S/D/F 同埋快捷鍵 ESC 暫停、R 重開)
 window.addEventListener('keydown', (e) => {
     const key = e.key.toLowerCase();
 
-    // 快捷鍵：ESC 暫停，R 重新開始
     if (e.key === 'Escape') {
         if (gameStarted) togglePause();
         return;
@@ -246,6 +299,11 @@ window.addEventListener('keydown', (e) => {
                 score += 80 * multiplier;
                 combo += 1;
                 showFeedback('GOOD', 'good');
+            }
+
+            // 更新最高連擊記錄
+            if (combo > maxCombo) {
+                maxCombo = combo;
             }
         } else {
             combo = 0;

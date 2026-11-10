@@ -10,24 +10,27 @@
     <div class="arcade-cabinet">
         <header>
             <h1>⚡ 街機和弦節奏 ⚡</h1>
-            <div class="score-board">分數: <span id="score">0</span> | 連擊: <span id="combo">0</span> COMBO</div>
+            <div class="score-board">
+                分數: <span id="score">0</span> | 連擊: <span id="combo">0</span> | 時間: <span id="timeDisplay">60</span>s
+            </div>
             <div id="chordDisplay" class="chord-display">準備就緒</div>
         </header>
 
         <div class="game-screen" id="gameScreen">
             <div id="hitFeedback" class="hit-feedback"></div>
             
-            <!-- 遊戲控制按鈕列 (暫停 / 重新開始) -->
+            <!-- 控制按鈕列 -->
             <div class="game-top-bar">
                 <button id="pauseBtn" class="control-small-btn" title="暫停 (ESC)">⏸ 暫停</button>
-                <button id="restartBtn" class="control-small-btn" title="重新開始 (R)">🔄 重新開始</button>
+                <button id="restartBtn" class="control-small-btn" title="重新開始 (R)">🔄 重開</button>
             </div>
 
+            <!-- 開始遮罩 -->
             <div id="startOverlay" class="overlay">
                 <div class="setup-box">
                     <label for="audioFile" class="file-label">🎵 選擇 MP3 歌曲</label>
                     <input type="file" id="audioFile" accept="audio/mp3, audio/wav, audio/ogg">
-                    <div id="fileName" class="file-name">未選擇歌曲（將使用預設節奏）</div>
+                    <div id="fileName" class="file-name">未選擇歌曲（預設 60 秒節奏）</div>
                     
                     <div class="bpm-control">
                         <label for="bpmInput">歌曲 BPM: </label>
@@ -41,9 +44,22 @@
             <!-- 暫停遮罩 -->
             <div id="pauseOverlay" class="overlay" style="display: none;">
                 <div class="setup-box">
-                    <h2 style="color: #00ffcc; text-shadow: 0 0 10px #00ffcc; margin-bottom: 10px;">遊戲暫停</h2>
+                    <h2 class="overlay-title">遊戲暫停</h2>
                     <button id="resumeBtn" class="sub-btn">繼續遊戲</button>
                     <button id="restartFromPauseBtn" class="sub-btn">重新開始</button>
+                </div>
+            </div>
+
+            <!-- 結算畫面遮罩 -->
+            <div id="resultOverlay" class="overlay" style="display: none;">
+                <div class="setup-box result-box">
+                    <h2 class="overlay-title">🏆 演奏結束 🏆</h2>
+                    <div class="result-rank" id="resultRank">S</div>
+                    <div class="result-details">
+                        <p>最終得分: <span id="finalScore" class="highlight">0</span></p>
+                        <p>最高連擊: <span id="maxCombo" class="highlight">0</span> COMBO</p>
+                    </div>
+                    <button id="playAgainBtn" class="sub-btn">再玩一次</button>
                 </div>
             </div>
 
